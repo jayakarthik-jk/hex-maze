@@ -6,6 +6,12 @@ class Hex {
     this.sides = [true, true, true, true, true, true];
     this.visited = false;
     this.index = index;
+    this.neighbors = [];
+    // for A* algorithm
+    this.g = 0;
+    this.h = 0;
+    this.f = 0;
+    this.path = [];
   }
   draw() {
     let angle = TWO_PI / 6;

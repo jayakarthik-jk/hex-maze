@@ -5,6 +5,8 @@ class HexMaze {
   total_rows;
   current;
   stack = [];
+  completed = false;
+
   constructor(radius, padding) {
     this.padding = padding;
     this.radius = radius;
@@ -14,120 +16,107 @@ class HexMaze {
     this.total_rows = floor(
       (height - this.padding * 2) / (this.singleHeight - this.radius / 2)
     );
+    this.activeColor = color(0, 0, 255);
+    this.visitedColor = color(90, 219, 181, 200);
+    this.create();
+    this.link();
   }
-  draw() {
+  link() {
     for (let i = 0; i < this.nodes.length; i++) {
-      fill(90, 219, 181, 200);
-      this.nodes[i].draw();
-    }
-    this.current.visited = true;
-    fill(219, 174, 237);
-    this.current.draw();
-    const next = this.checkNeighbors();
-    if (next && !next.visited) {
-      next.visited = true;
-      this.removeWalls(this.current, next);
-      this.stack.push(this.current);
-      this.current = next;
-    } else if (this.stack.length > 0) {
-      this.current = this.stack.pop();
+      this.nodes[i].neighbors = this.getNeighbors(this.nodes[i]);
     }
   }
-
-  checkNeighbors() {
+  getNeighbors(node) {
     const neighbors = [];
-    const index = this.current.index;
+    const index = node.index;
+    // right
     if (
       index % this.total_columns != this.total_columns - 1 &&
-      this.nodes[index + 1] &&
-      !this.nodes[index + 1].visited
+      this.nodes[index + 1]
     ) {
       neighbors.push(this.nodes[index + 1]);
     }
-    if (
-      index % this.total_columns != 0 &&
-      this.nodes[index - 1] &&
-      !this.nodes[index - 1].visited
-    ) {
+    // left
+    if (index % this.total_columns != 0 && this.nodes[index - 1]) {
       neighbors.push(this.nodes[index - 1]);
     }
 
     // bottom right
     if (index % this.total_columns != this.total_columns - 1) {
+      // even row
       if (floor(index / this.total_columns) % 2 == 0) {
-        if (
-          this.nodes[index + this.total_columns] &&
-          !this.nodes[index + this.total_columns].visited
-        ) {
+        // if exists and not visited
+        if (this.nodes[index + this.total_columns]) {
           neighbors.push(this.nodes[index + this.total_columns]);
         }
-      } else {
-        if (
-          this.nodes[index + this.total_columns + 1] &&
-          !this.nodes[index + this.total_columns + 1].visited
-        ) {
+      }
+      // odd row
+      else {
+        // if exists and not visited
+        if (this.nodes[index + this.total_columns + 1]) {
           neighbors.push(this.nodes[index + this.total_columns + 1]);
         }
       }
     }
     // bottom left
     if (index % this.total_columns != 0) {
+      // even row
       if (floor(index / this.total_columns) % 2 == 0) {
-        if (
-          this.nodes[index + this.total_columns - 1] &&
-          !this.nodes[index + this.total_columns - 1].visited
-        ) {
+        // if exists and not visited
+        if (this.nodes[index + this.total_columns - 1]) {
           neighbors.push(this.nodes[index + this.total_columns - 1]);
         }
-      } else {
-        if (
-          this.nodes[index + this.total_columns] &&
-          !this.nodes[index + this.total_columns].visited
-        ) {
+      }
+      // odd row
+      else {
+        // if exists and not visited
+        if (this.nodes[index + this.total_columns]) {
           neighbors.push(this.nodes[index + this.total_columns]);
         }
       }
     }
     // top left
     if (index % this.total_columns != 0) {
+      // even row
       if (floor(index / this.total_columns) % 2 == 0) {
-        if (
-          this.nodes[index - this.total_columns - 1] &&
-          !this.nodes[index - this.total_columns - 1].visited
-        ) {
+        // if exists and not visited
+        if (this.nodes[index - this.total_columns - 1]) {
           neighbors.push(this.nodes[index - this.total_columns - 1]);
         }
-      } else {
-        if (
-          this.nodes[index - this.total_columns] &&
-          !this.nodes[index - this.total_columns].visited
-        ) {
+      }
+      // odd row
+      else {
+        // if exists and not visited
+        if (this.nodes[index - this.total_columns]) {
           neighbors.push(this.nodes[index - this.total_columns]);
         }
       }
     }
     // top right
     if (index % this.total_columns != this.total_columns - 1) {
+      // even row
       if (floor(index / this.total_columns) % 2 == 0) {
-        if (
-          this.nodes[index - this.total_columns] &&
-          !this.nodes[index - this.total_columns].visited
-        ) {
+        // if exists and not visited
+        if (this.nodes[index - this.total_columns]) {
           neighbors.push(this.nodes[index - this.total_columns]);
         }
-      } else {
-        if (
-          this.nodes[index - this.total_columns + 1] &&
-          !this.nodes[index - this.total_columns + 1].visited
-        ) {
+      }
+      // odd row
+      else {
+        // if exists and not visited
+        if (this.nodes[index - this.total_columns + 1]) {
           neighbors.push(this.nodes[index - this.total_columns + 1]);
         }
       }
     }
+    return neighbors;
+  }
+  checkNeighbors(node) {
+    let neighbors = node.neighbors;
+    neighbors = neighbors.filter((neighbor) => !neighbor.visited);
     if (neighbors.length <= 0) {
       return null;
     }
-
     const rand = floor(random(neighbors.length));
     return neighbors[rand];
   }
@@ -174,6 +163,33 @@ class HexMaze {
     if (a.index - this.total_columns + 1 == b.index) {
       a.sides[4] = false;
       b.sides[1] = false;
+    }
+    a.path.push(b);
+    b.path.push(a);
+  }
+
+  draw() {
+    this.nodes[0].sides[3] = false;
+    this.nodes[this.nodes.length - 1].sides[0] = false;
+    for (let i = 0; i < this.nodes.length; i++) {
+      fill(this.visitedColor);
+      this.nodes[i].draw();
+    }
+    this.current.visited = true;
+    if (!this.completed) {
+      fill(this.activeColor);
+      this.current.draw();
+    }
+    const next = this.checkNeighbors(this.current);
+    if (next && !next.visited) {
+      next.visited = true;
+      this.removeWalls(this.current, next);
+      this.stack.push(this.current);
+      this.current = next;
+    } else if (this.stack.length > 0) {
+      this.current = this.stack.pop();
+    } else {
+      this.completed = true;
     }
   }
 
